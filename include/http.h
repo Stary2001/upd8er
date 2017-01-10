@@ -33,9 +33,11 @@ namespace util
 			Result get_status_code(u32 *status_code);
 			Result get_file_size(u32 *content_size);
 			Result download_data(u8 *buffer, u32 size, u32 *downloaded_size);
+			Result add_header(std::string name, std::string value);
 			Result get_header(std::string name, std::string &str);
 			Result set_ssl_options(u32 options);
 			Result set_keepalive(HTTPC_KeepAlive keepalive);
+			
 
 			bool bad;
 			bool requesting;
@@ -43,8 +45,8 @@ namespace util
 			httpcContext _ctx;
 		};
 
-		Result start_download(std::string url, HTTPContext &c, int recursion = 0);
-		Result download_buffer(std::string url, u8 *& buff, size_t &len);
+		Result start_download(std::string url, HTTPContext &c, size_t limit = 0, int recursion = 0);
+		Result download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit = 0);
 		Result download_string(std::string url, std::string &s);
 		Result download_file(std::string url, std::string filename);
 	}

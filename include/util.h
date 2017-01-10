@@ -7,6 +7,7 @@
 
 namespace util
 {
+	Result sha256(u8 *buff, size_t len, u8 *hash);
 	Result file_sha256(std::string file, u8 *hash);
 	std::string read_file(std::string file);
 

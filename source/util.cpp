@@ -13,35 +13,22 @@ Result util::file_sha256(std::string file, u8 *hash)
 	size_t file_sz = f.tellg();
 	f.seekg(0, std::ios::beg);
 
-	size_t chunk = file_sz; // updatesha256context sucks, apparently??
-
-	u8 *buff = (u8*)malloc(chunk);
+	u8 *buff = (u8*)malloc(file_sz);
 	memset(hash, 0, 0x20);
 
-	size_t hash_len;
-	while(true)
-	{
-		f.read((char*)buff, chunk);
-		hash_len = f.gcount();
+	f.read((char*)buff, file_sz);
 		
-		if(hash_len == 0)
-		{
-			break;
-		}
-
-		if(R_FAILED(res = FSUSER_UpdateSha256Context(buff, hash_len, hash)))
-		{
-			free(buff);
-			f.close();
-
-			return res;
-		}
-	}
+	res = sha256(buff, file_sz, hash);
 
 	free(buff);
 	f.close();
 
-	return 0;
+	return res;
+}
+
+Result util::sha256(u8 *buffer, size_t len, u8 *hash)
+{
+	return FSUSER_UpdateSha256Context(buffer, len, hash);
 }
 
 std::string util::read_file(std::string file)

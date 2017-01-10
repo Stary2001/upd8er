@@ -74,6 +74,11 @@ Result HTTPContext::get_header(std::string name, std::string &str)
 	}
 }
 
+Result HTTPContext::add_header(std::string name, std::string value)
+{
+	return httpcAddRequestHeaderField(&_ctx, name.c_str(), value.c_str());
+}
+
 Result HTTPContext::set_ssl_options(u32 options)
 {
 	return httpcSetSSLOpt(&_ctx, options);
@@ -118,7 +123,7 @@ Result do_redirect(HTTPContext &ctx, std::string &old_url, URL &new_url)
 	printf("New path: %s!\n", new_url.to_str().c_str());
 }
 
-Result util::http::start_download(std::string url, HTTPContext &ctx, int recursion)
+Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limit, int recursion)
 {
 	if(recursion == 10) // 10 redirects is too far...
 	{
@@ -132,6 +137,13 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, int recursi
 	
 	CHECKED(ctx.set_ssl_options(SSLCOPT_DisableVerify));
 	CHECKED(ctx.set_keepalive(HTTPC_KEEPALIVE_ENABLED));
+
+	if(limit != 0)
+	{
+		char itoa_buffer[32];
+		itoa(limit - 1, itoa_buffer, 32);
+		CHECKED(ctx.add_header("Range", "bytes=0-" + std::string(itoa_buffer)));
+	}
 	CHECKED(ctx.begin_request());
 
 	u32 resp_status = 0;
@@ -160,7 +172,7 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, int recursi
 	return 0;
 }
 
-Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
+Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit)
 {
 	Result res;
 
@@ -172,6 +184,12 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
 	u32 file_size = 0;
 	CHECKED(ctx.get_file_size(&file_size))
 	u32 chunk = 0x10000;
+
+	if(limit != 0)
+	{
+		if(limit < chunk) chunk = limit;
+		if(file_size > limit) file_size = limit;
+	}
 
 	if(file_size != 0)
 	{
@@ -213,6 +231,11 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
 		}
 
 		downloaded_total += readsize;
+		if(downloaded_total >= limit)
+		{
+			ctx.cancel();
+			break;
+		}
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
 

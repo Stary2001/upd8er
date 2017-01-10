@@ -60,6 +60,17 @@ int main(int argc, char **argv)
 		printf("loading items failed\n :(");
 	}
 
+
+	printf("Checking for updates...\n");
+	for(auto a: apps)
+	{
+		printf("%s...\n", a.name.c_str());
+		if(a.check())
+		{
+			printf("New update for %s!\n", a.name.c_str());
+		}
+	}
+
 	while (aptMainLoop())
 	{
 		hidScanInput();
@@ -69,7 +80,6 @@ int main(int argc, char **argv)
 		gspWaitForVBlank();
 		if (keys & KEY_START)
 		{
-			printf("aa\n");
 			break;
 		}
 	}
