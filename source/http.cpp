@@ -4,10 +4,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "http.h"
+#include "util.h"
 
 using namespace util::http;
-
-#define CHECKED(a) if(R_FAILED(res = (a))) { return res; }
 
 HTTPContext::HTTPContext()
 {
@@ -20,22 +19,10 @@ HTTPContext::HTTPContext(HTTPC_RequestMethod meth, std::string url)
 	requesting = false;
 
 	Result r = httpcOpenContext(&_ctx, meth, url.c_str(), 1 /* use default proxy */);
-	if(!r)
+	if(R_FAILED(r))
 	{
+		printf("OpenContext failed with %08x!!\n", r);
 		bad = true;
-	}
-}
-
-HTTPContext::~HTTPContext()
-{
-	if(requesting)
-	{
-		httpcCancelConnection(&_ctx);
-	}
-
-	if(!bad)
-	{
-		httpcCloseContext(&_ctx);
 	}
 }
 
@@ -49,6 +36,12 @@ Result HTTPContext::cancel()
 {
 	requesting = false;
 	return httpcCancelConnection(&_ctx);
+}
+
+Result HTTPContext::close()
+{
+	bad = true;
+	return httpcCloseContext(&_ctx);
 }
 
 Result HTTPContext::get_status_code(u32 *status_code)
@@ -93,6 +86,7 @@ Result HTTPContext::set_keepalive(HTTPC_KeepAlive keepalive)
 
 Result do_redirect(HTTPContext &ctx, std::string &old_url, URL &new_url)
 {
+	printf("Doing redirect..\n");
 	std::string new_url_str;
 	Result res;
 	if(R_FAILED(res = ctx.get_header("Location", new_url_str)))
@@ -134,11 +128,11 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, int recursi
 	Result res;
 
 	printf("Path: %s \n", url.c_str());
-
 	ctx = HTTPContext(HTTPC_METHOD_GET, url);
+	
 	CHECKED(ctx.set_ssl_options(SSLCOPT_DisableVerify));
 	CHECKED(ctx.set_keepalive(HTTPC_KEEPALIVE_ENABLED));
-	CHECKED(ctx.begin_request())
+	CHECKED(ctx.begin_request());
 
 	u32 resp_status = 0;
 	
@@ -152,6 +146,9 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, int recursi
 	{
 		URL new_url;
 		CHECKED(do_redirect(ctx, url, new_url));
+		ctx.cancel();
+		ctx.close();
+
 		return start_download(new_url.to_str(), ctx, recursion + 1);
 	}
 	else
@@ -168,7 +165,9 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
 	Result res;
 
 	HTTPContext ctx;
+	printf("Download starting!\n");
 	CHECKED(start_download(url, ctx));
+	printf("Download started!\n");
 
 	u32 file_size = 0;
 	CHECKED(ctx.get_file_size(&file_size))
@@ -203,6 +202,7 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
 			}
 		}
 
+		printf("Grabbing %i, %i/%i!\n", chunk, downloaded_total, file_size);
 		res = ctx.download_data(buff + downloaded_total, chunk, &readsize);
 
 		if(res != HTTPC_RESULTCODE_DOWNLOADPENDING && R_FAILED(res))
@@ -215,6 +215,8 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len)
 		downloaded_total += readsize;
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
+
+	ctx.close();
 
 	len = downloaded_total;
 
@@ -263,6 +265,8 @@ Result util::http::download_string(std::string url, std::string &s)
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
 
 	s.resize(downloaded_total);
+
+	ctx.close();
 
 	return 0;
 }

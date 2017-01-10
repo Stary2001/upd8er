@@ -28,9 +28,9 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source ext
+SOURCES		:=	source ext/json11
 DATA		:=	data
-INCLUDES	:=	include
+INCLUDES	:=	include ext/json11
 APP_TITLE	:=	upd8er
 APP_DESCRIPTION := Updater for CIA/3DSX homebrew, as well as ARM9 binaries.
 APP_AUTHOR	:=	Stary
@@ -50,7 +50,7 @@ LIBS	:= -lctru -lm -lscenic
 
 CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DARM_ARCH -D_GNU_SOURCE -w
 
-CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++11 -w
+CXXFLAGS	:= $(CFLAGS) -fno-rtti -std=gnu++11 -w
 
 ASFLAGS	:=	-g $(ARCH) $(INCLUDE)
 LDFLAGS	=	-specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map) $(LIBS)

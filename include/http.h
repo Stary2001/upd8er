@@ -26,9 +26,9 @@ namespace util
 		public:
 			HTTPContext();
 			HTTPContext(HTTPC_RequestMethod meth, std::string url);
-			~HTTPContext();
 			Result begin_request();
 			Result cancel();
+			Result close();
 
 			Result get_status_code(u32 *status_code);
 			Result get_file_size(u32 *content_size);
