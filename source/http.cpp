@@ -91,7 +91,6 @@ Result HTTPContext::set_keepalive(HTTPC_KeepAlive keepalive)
 
 Result do_redirect(HTTPContext &ctx, std::string &old_url, URL &new_url)
 {
-	printf("Doing redirect..\n");
 	std::string new_url_str;
 	Result res;
 	if(R_FAILED(res = ctx.get_header("Location", new_url_str)))
@@ -119,8 +118,7 @@ Result do_redirect(HTTPContext &ctx, std::string &old_url, URL &new_url)
 	{
 		new_url = loc_url;
 	}
-
-	printf("New path: %s!\n", new_url.to_str().c_str());
+	return 0;
 }
 
 Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limit, int recursion)
@@ -132,7 +130,6 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 
 	Result res;
 
-	printf("Path: %s \n", url.c_str());
 	ctx = HTTPContext(HTTPC_METHOD_GET, url);
 	
 	CHECKED(ctx.set_ssl_options(SSLCOPT_DisableVerify));
@@ -140,9 +137,12 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 
 	if(limit != 0)
 	{
-		char itoa_buffer[32];
-		itoa(limit - 1, itoa_buffer, 32);
-		CHECKED(ctx.add_header("Range", "bytes=0-" + std::string(itoa_buffer)));
+		char itoa_buffer[33];
+		itoa(limit - 1, itoa_buffer, 10);
+		std::string s = "bytes=0-" + std::string(itoa_buffer);
+		printf("Range header: %s\n", s.c_str());
+
+		CHECKED(ctx.add_header("Range", s));
 	}
 	CHECKED(ctx.begin_request());
 
@@ -150,9 +150,9 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 	
 	CHECKED(ctx.get_status_code(&resp_status))
 
-	if(resp_status == 200)
+	if(resp_status == 200 || resp_status == 206)
 	{
-		printf("Got 200 OK!\n");
+		printf("Got %i!\n", resp_status);
 	}
 	else if((resp_status >= 301 && resp_status <= 303) || (resp_status >= 307 && resp_status <= 308))
 	{
@@ -161,11 +161,14 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 		ctx.cancel();
 		ctx.close();
 
-		return start_download(new_url.to_str(), ctx, recursion + 1);
+		return start_download(new_url.to_str(), ctx, limit, recursion + 1);
 	}
 	else
 	{
 		printf("HTTP *not* OK for %s, got %i instead!\n", url.c_str(), resp_status);
+		ctx.cancel();
+		ctx.close();
+
 		return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_NOT_IMPLEMENTED);
 	}
 
@@ -177,9 +180,7 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 	Result res;
 
 	HTTPContext ctx;
-	printf("Download starting!\n");
-	CHECKED(start_download(url, ctx));
-	printf("Download started!\n");
+	CHECKED(start_download(url, ctx, limit));
 
 	u32 file_size = 0;
 	CHECKED(ctx.get_file_size(&file_size))
