@@ -144,6 +144,9 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 
 		CHECKED(ctx.add_header("Range", s));
 	}
+
+	CHECKED(ctx.add_header("User-Agent", "upd8er/3ds - v1.0"));
+
 	CHECKED(ctx.begin_request());
 
 	u32 resp_status = 0;
@@ -166,10 +169,10 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 	else
 	{
 		printf("HTTP *not* OK for %s, got %i instead!\n", url.c_str(), resp_status);
-		ctx.cancel();
-		ctx.close();
+		//ctx.cancel();
+		//ctx.close();
 
-		return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_NOT_IMPLEMENTED);
+		//return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_NOT_IMPLEMENTED);
 	}
 
 	return 0;
@@ -221,7 +224,6 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 			}
 		}
 
-		printf("Grabbing %i, %i/%i!\n", chunk, downloaded_total, file_size);
 		res = ctx.download_data(buff + downloaded_total, chunk, &readsize);
 
 		if(res != HTTPC_RESULTCODE_DOWNLOADPENDING && R_FAILED(res))
@@ -273,6 +275,7 @@ Result util::http::download_string(std::string url, std::string &s)
 		{
 			printf("Resizing buffer to %i bytes!\n", s.capacity() + (chunk - (s.capacity() % chunk)));
 			s.resize(s.capacity() + (chunk - (s.capacity() % chunk)));
+			buff = (u8*)s.data();
 		}
 
 		res = ctx.download_data(buff + downloaded_total, chunk, &downloaded);
@@ -283,8 +286,6 @@ Result util::http::download_string(std::string url, std::string &s)
 			return res;
 		}
 		downloaded_total += downloaded;
-
-		printf("downloaded %i bytes...\n", downloaded);
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
 
