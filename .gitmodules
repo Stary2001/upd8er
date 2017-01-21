@@ -1,3 +1,0 @@
-[submodule "ext/json11"]
-	path = ext/json11
-	url = https://github.com/dropbox/json11.git
