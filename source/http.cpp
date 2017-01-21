@@ -233,14 +233,13 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 		}
 
 		downloaded_total += readsize;
-		if(downloaded_total >= limit)
+		if(limit != 0 && downloaded_total >= limit)
 		{
 			ctx.cancel();
 			break;
 		}
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
-
 	ctx.close();
 
 	len = downloaded_total;
