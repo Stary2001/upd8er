@@ -140,7 +140,6 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 		char itoa_buffer[33];
 		itoa(limit - 1, itoa_buffer, 10);
 		std::string s = "bytes=0-" + std::string(itoa_buffer);
-		printf("Range header: %s\n", s.c_str());
 
 		CHECKED(ctx.add_header("Range", s));
 	}
@@ -155,7 +154,7 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 
 	if(resp_status == 200 || resp_status == 206)
 	{
-		printf("Got %i!\n", resp_status);
+		//printf("Got %i!\n", resp_status);
 	}
 	else if((resp_status >= 301 && resp_status <= 303) || (resp_status >= 307 && resp_status <= 308))
 	{
@@ -168,11 +167,11 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 	}
 	else
 	{
-		printf("HTTP *not* OK for %s, got %i instead!\n", url.c_str(), resp_status);
-		//ctx.cancel();
-		//ctx.close();
+		//printf("HTTP *not* OK for %s, got %i instead!\n", url.c_str(), resp_status);
+		ctx.cancel();
+		ctx.close();
 
-		//return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_NOT_IMPLEMENTED);
+		return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_NOT_IMPLEMENTED);
 	}
 
 	return 0;
@@ -213,12 +212,12 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 	{
 		if((len - downloaded_total) < chunk)
 		{
-			printf("Resizing buffer to %i bytes!\n", len + (chunk - (len % chunk)));
+			//printf("Resizing buffer to %i bytes!\n", len + (chunk - (len % chunk)));
 			u8 *oldbuff = buff;
 			buff = (u8*)realloc(buff, len + (chunk - (len % chunk)));
 			if(buff == nullptr)
 			{
-				printf("REALLOC FAILED!!\n");
+				//printf("REALLOC FAILED!!\n");
 				free(oldbuff);
 				return MAKERESULT(RL_FATAL, RS_OUTOFRESOURCE, RM_HTTP, RD_TOO_LARGE);
 			}
@@ -273,7 +272,7 @@ Result util::http::download_string(std::string url, std::string &s)
 	{
 		if((s.capacity() - downloaded_total) < chunk)
 		{
-			printf("Resizing buffer to %i bytes!\n", s.capacity() + (chunk - (s.capacity() % chunk)));
+			//printf("Resizing buffer to %i bytes!\n", s.capacity() + (chunk - (s.capacity() % chunk)));
 			s.resize(s.capacity() + (chunk - (s.capacity() % chunk)));
 			buff = (u8*)s.data();
 		}
