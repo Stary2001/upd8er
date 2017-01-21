@@ -23,7 +23,13 @@ App::App(json manifest)
 			{
 				std::string gh_user = u["user"];
 				std::string gh_repo = u["repo"];
-				update = new GHReleasesUpdate(gh_user, gh_repo);
+				std::string prefer;
+				if(u["prefer"].is_string())
+				{
+					prefer = u["prefer"];
+				}
+
+				update = new GHReleasesUpdate(gh_user, gh_repo, prefer);
 			}
 			else if(update_type == "hash")
 			{
@@ -67,10 +73,16 @@ Release HashUpdate::get_latest()
 	return Release(hash);
 }
 
-GHReleasesUpdate::GHReleasesUpdate(std::string _user, std::string _repo)
+std::string HashUpdate::get_url()
+{
+	return update_url;
+}
+
+GHReleasesUpdate::GHReleasesUpdate(std::string _user, std::string _repo, std::string _prefer)
 {
 	user = _user;
 	repo = _repo;
+	prefer = _prefer;
 	update_type = GithubReleases;
 }
 
@@ -94,75 +106,38 @@ Release GHReleasesUpdate::get_latest()
 	return Release();
 }
 
-Release::Release()
-{}
-
-Release::Release(std::string _tag, std::string _timestamp)
+std::string GHReleasesUpdate::get_url()
 {
-	update_type = GithubReleases;
-	tag = _tag;
-	timestamp = _timestamp;
-}
+	std::string url = "https://api.github.com/repos/";
+	url += user + "/" + repo;
+	url += "/releases/latest";
 
-Release::Release(u8 *_hash)
-{
-	update_type = HashAndCompare;
-	memcpy(sha_hash, _hash, 0x20);
-}
+	std::string response;
+	Result res = util::http::download_string(url, response);
 
-Release::Release(std::string _sha_hash_str)
-{
-	util::from_hex(sha_hash, 0x20, _sha_hash_str);
-}
-
-Release::Release(json j)
-{
-	if(j["type"].is_number())
+	if(R_SUCCEEDED(res))
 	{
-		int t = j["type"];
-		update_type = (UpdateType)t;
-		if(update_type == HashAndCompare)
+		json j = json::parse(response);
+		std::string url;
+
+		for(auto it = j["assets"].begin(); it != j["assets"].end(); it++)
 		{
-			std::string s = j["hash"];
-			util::from_hex(sha_hash, 0x20, s);
+			json asset = it.value();
+			url = asset["browser_download_url"];
+			std::string name = asset["name"];
+
+			printf("maybe preferring %s\n", name.c_str());
+
+			if(prefer != "")
+			{
+				if(name.substr(name.length() - prefer.length(), prefer.length()) == prefer)
+				{
+					break;
+				}
+			}
 		}
-		else if(update_type == GithubReleases)
-		{
-			tag = j["tag"];
-			timestamp = j["timestamp"];
-		}
-	}
-}
-
-std::string Release::to_str()
-{
-	if(update_type == HashAndCompare)
-	{
-		std::string s;
-		util::to_hex(s, sha_hash, 4);
-		return s;
-	}
-	else if(update_type == GithubReleases)
-	{
-		return tag + " at " + timestamp;
-	}
-}
-
-json Release::to_json()
-{
-	json j = json::object();
-	j["type"] = (int)update_type;
-	if(update_type == HashAndCompare)
-	{
-		std::string s;
-		util::to_hex(s, sha_hash, 0x20);
-		j["hash"] = s;
-	}
-	else if(update_type == GithubReleases)
-	{
-		j["tag"] = tag;
-		j["timestamp"] = timestamp;
+		return url;
 	}
 
-	return j;
+	return "";
 }

@@ -107,3 +107,8 @@ void util::from_hex(u8 *buff, size_t len, std::string &s)
 		else if(c >= 'a' && c <= 'f') { buff[i] |= 0xa + (c - 'a'); }
 	}
 }
+
+std::string util::get_tmp_dir()
+{
+	return "/upd8er/tmp";
+}

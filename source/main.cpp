@@ -60,7 +60,7 @@ bool load_state(std::map<std::string, Release> &state)
 		{
 			std::string k = it.key();
 			json v = it.value();
-			state[k] = Release(v); 
+			state[k] = Release(v);
 		}
 	}
 
@@ -112,7 +112,11 @@ int main(int argc, char **argv)
 			if(r != state[k])
 			{
 				printf("New update for %s/%s\n%s vs %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str(), state[k].to_str().c_str());
-				state[k] = r;
+				Result res = util::http::download_file(b.second->get_url(), util::get_tmp_dir() + "/" + a.name + "-" + b.first.c_str());
+				if(R_FAILED(res))
+				{
+					printf("Download error!\n");
+				}
 			}
 			else
 			{
@@ -123,6 +127,8 @@ int main(int argc, char **argv)
 
 	save_state("upd8er/state.json", state);
 
+	printf("Done.\n");
+
 	while (aptMainLoop())
 	{
 		hidScanInput();
@@ -132,7 +138,7 @@ int main(int argc, char **argv)
 		gspWaitForVBlank();
 		if (keys & KEY_START)
 		{
-			break; 
+			break;
 		}
 	}
 

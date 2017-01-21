@@ -3,7 +3,6 @@
 
 Action* Action::parse(json j)
 {
-	printf("Got action!\n");
 	if(j["name"].is_string())
 	{
 		std::string name = j["action"];
