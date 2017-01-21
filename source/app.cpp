@@ -1,48 +1,58 @@
 #include <3ds.h>
 #include <stdio.h>
-#include "json11.hpp"
 #include "util.h"
 #include "http.h"
 #include "app.h"
 
-App::App(json11::Json manifest)
+App::App(json manifest)
 {
-	update_checker = nullptr;
+	name = manifest["name"];
 
-	name = manifest["name"].string_value();
-	if(!manifest["update"].is_null())
+	if(manifest["branches"].is_object())
 	{
-		std::string update_type = manifest["update"]["type"].string_value();
-		if(update_type == "github")
+		for(auto it = manifest["branches"].begin(); it != manifest["branches"].end(); it++)
 		{
-			std::string gh_user = manifest["update"]["user"].string_value();
-			std::string gh_repo = manifest["update"]["repo"].string_value();
-			update_checker = new GHReleasesChecker(name, gh_user, gh_repo);
+			std::string name = it.key();
+			json u = it.value();
+
+			Update *update = nullptr;
+
+			std::string update_type = u["type"];
+			if(update_type == "github")
+			{
+				std::string gh_user = u["user"];
+				std::string gh_repo = u["repo"];
+				update = new GHReleasesUpdate(gh_user, gh_repo);
+			}
+			else if(update_type == "hash")
+			{
+				std::string url = u["url"];
+				update = new HashUpdate(url);
+			}
+
+			if(update != nullptr)
+			{
+				update_branches[name] = update;
+			}
 		}
-		else if(update_type == "hash")
+	}
+
+	if(manifest["post"].is_array())
+	{
+		for(auto it = manifest["post"].begin(); it != manifest["post"].end(); it++)
 		{
-			std::string url = manifest["update"]["url"].string_value();
-			update_checker = new HashUpdateChecker(name, url);
+			post_actions.push_back(Action::parse(it.value()));
 		}
 	}
 }
 
-bool App::check()
+HashUpdate::HashUpdate(std::string _url)
 {
-	if(update_checker)
-	{
-		return update_checker->check();
-	}
-}
-
-HashUpdateChecker::HashUpdateChecker(std::string _name, std::string _url)
-{
-	name = _name;
 	update_url = _url;
 	update_type = HashAndCompare;
 }
 
-bool HashUpdateChecker::check()
+bool HashUpdate::check()
 {
 	u8 *buff;
 	size_t len;
@@ -62,15 +72,14 @@ bool HashUpdateChecker::check()
 	return false;
 }
 
-GHReleasesChecker::GHReleasesChecker(std::string _name, std::string _user, std::string _repo)
+GHReleasesUpdate::GHReleasesUpdate(std::string _user, std::string _repo)
 {
-	name = _name;
 	user = _user;
 	repo = _repo;
 	update_type = GithubReleases;
 }
 
-bool GHReleasesChecker::check()
+bool GHReleasesUpdate::check()
 {
 	printf("GH releases todo!!\n");
 	return false;

@@ -28,9 +28,10 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source ext/json11
+SOURCES		:=	source
 DATA		:=	data
-INCLUDES	:=	include ext/json11
+INCLUDES	:=	include
+EXTRA_INCLUDES := -I$(DEVKITPRO)/libstarlight/include
 APP_TITLE	:=	upd8er
 APP_DESCRIPTION := Updater for CIA/3DSX homebrew, as well as ARM9 binaries.
 APP_AUTHOR	:=	Stary
@@ -42,8 +43,8 @@ NO_3DSX		:=	no
 #---------------------------------------------------------------------------------
 ARCH	:=	-march=armv6k -mtune=mpcore -mfloat-abi=hard
 
-CFLAGS	:=	-g -Wall -O3 -mword-relocations \
-			-fomit-frame-pointer -ffast-math \
+CFLAGS	:=	-g -Wall -Os -mword-relocations \
+			-fomit-frame-pointer -ffast-math -ffunction-sections -Wl,--gc-sections -flto \
 			$(ARCH)
 
 LIBS	:= -lctru -lm -lscenic
@@ -101,7 +102,7 @@ export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-			-I$(CURDIR)/$(BUILD)
+			-I$(CURDIR)/$(BUILD) $(EXTRA_INCLUDES)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 

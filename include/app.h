@@ -1,7 +1,11 @@
 #pragma once
 #include <string>
-#include "json11.hpp"
+#include <map>
+#include <vector>
+#include <starlight/_incLib/json.hpp>
+using json = nlohmann::json;
 
+#include "action.h"
 enum AppType
 {
 	THREEDSX,
@@ -15,28 +19,28 @@ enum UpdateType
 	GithubReleases,
 };
 
-class UpdateChecker
+class Update
 {
 public:
-	std::string name;
 	UpdateType update_type;
 	virtual bool check() = 0;
+	std::vector<Action*> post_actions;
 };
 
-class GHReleasesChecker : public UpdateChecker
+class GHReleasesUpdate : public Update
 {
 public:
-	GHReleasesChecker(std::string name, std::string _user, std::string _repo);
+	GHReleasesUpdate(std::string _user, std::string _repo);
 	std::string repo;
 	std::string user;
 
 	virtual bool check();
 };
 
-class HashUpdateChecker: public UpdateChecker
+class HashUpdate: public Update
 {
 public:
-	HashUpdateChecker(std::string name, std::string _url);
+	HashUpdate(std::string _url);
 	std::string update_url;
 
 	virtual bool check();
@@ -45,11 +49,10 @@ public:
 class App
 {
 public:
-	App(json11::Json manifest);
-
-	bool check();
+	App(json manifest);
 
 	std::string name;
 	std::vector<AppType> types;
-	UpdateChecker *update_checker;
+	std::vector<Action*> post_actions;
+	std::map<std::string, Update *> update_branches;
 };

@@ -28,7 +28,7 @@ bool load_apps(std::vector<App> &apps)
 
 		std::string json_errmsg;
 
-		json11::Json val = json11::Json::parse(util::read_file(name), json_errmsg);
+		json val = json::parse(util::read_file(name));
 		if(!val.is_null())
 		{
 			App app(val);
@@ -37,7 +37,7 @@ bool load_apps(std::vector<App> &apps)
 		}
 		else
 		{
-			printf("Invalid JSON: '%s'", json_errmsg.c_str());
+			//printf("Invalid JSON: '%s'", json_errmsg.c_str());
 		}
 	}
 	closedir(dir);
@@ -60,14 +60,16 @@ int main(int argc, char **argv)
 		printf("loading items failed\n :(");
 	}
 
-
 	printf("Checking for updates...\n");
 	for(auto a: apps)
 	{
 		printf("%s...\n", a.name.c_str());
-		if(a.check())
+		for(auto b: a.update_branches)
 		{
-			printf("New update for %s!\n", a.name.c_str());
+			if(b.second->check())
+			{
+				printf("New update for %s/%s!\n", a.name.c_str(), b.first.c_str());
+			}
 		}
 	}
 
