@@ -64,12 +64,6 @@ Release HashUpdate::get_latest()
 
 	u8 hash[0x20];
 	util::sha256(buff, len, hash);
-	for(int i = 0; i<0x20; i++)
-	{
-		printf("%02x", hash[i]);
-	}
-	printf("\n");
-
 	return Release(hash);
 }
 
@@ -94,7 +88,6 @@ Release GHReleasesUpdate::get_latest()
 		json j = json::parse(response);
 		std::string tag = j["tag_name"];
 		std::string at = j["published_at"];
-		printf("tag %s at %s\n", tag.c_str(), at.c_str());
 		return Release(tag, at);
 	}
 
