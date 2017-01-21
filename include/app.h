@@ -26,6 +26,7 @@ public:
 	Release(std::string tag, std::string timestamp);
 	Release(u8 *sha_hash);
 	Release(std::string sha_hash_str);
+	Release(json j);
 
 	std::string tag;
 	std::string timestamp;
@@ -34,6 +35,7 @@ public:
 	UpdateType update_type;
 
 	std::string to_str();
+	json to_json();
 };
 
 class Update

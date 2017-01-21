@@ -6,8 +6,8 @@
 
 App::App(json manifest)
 {
-	id = manifest["id"];
-	name = manifest["name"];
+	if(manifest["id"].is_string()) id = manifest["id"];
+	if(manifest["name"].is_string()) name = manifest["name"];
 
 	if(manifest["branches"].is_object())
 	{
@@ -110,33 +110,28 @@ Release::Release(u8 *_hash)
 	memcpy(sha_hash, _hash, 0x20);
 }
 
-void to_hex(std::string &s, u8 *buff, size_t len)
-{
-	const char *chars = "0123456789abcdef";
-
-	for(int i = 0; i < len; i++)
-	{
-		s += chars[(buff[i] & 0xf0) >> 4];
-		s += chars[buff[i] & 0xf];
-	}
-}
-
-void from_hex(u8 *buff, size_t len, std::string &s)
-{
-	for(int i = 0; i < len; i++)
-	{
-		u8 c = buff[i*2];
-		if(c >= '0' && c <= '9') { buff[i] = c - '0'; }
-		else if(c >= 'a' && c <= 'f') { buff[i] = c - 'a'; }
-		c = buff[(i*2) + 1];
-		if(c >= '0' && c <= '9') { buff[i] |= (c - '0') << 4; }
-		else if(c >= 'a' && c <= 'f') { buff[i] |= (c - 'a') << 4; }
-	}
-}
-
 Release::Release(std::string _sha_hash_str)
 {
-	from_hex(sha_hash, 0x20, _sha_hash_str);
+	util::from_hex(sha_hash, 0x20, _sha_hash_str);
+}
+
+Release::Release(json j)
+{
+	if(j["type"].is_number())
+	{
+		int t = j["type"];
+		update_type = (UpdateType)t;
+		if(update_type == HashAndCompare)
+		{
+			std::string s = j["hash"];
+			util::from_hex(sha_hash, 0x20, s);
+		}
+		else if(update_type == GithubReleases)
+		{
+			tag = j["tag"];
+			timestamp = j["timestamp"];
+		}
+	}
 }
 
 std::string Release::to_str()
@@ -144,11 +139,30 @@ std::string Release::to_str()
 	if(update_type == HashAndCompare)
 	{
 		std::string s;
-		to_hex(s, sha_hash, 4);
+		util::to_hex(s, sha_hash, 4);
 		return s;
 	}
 	else if(update_type == GithubReleases)
 	{
 		return tag + " at " + timestamp;
 	}
+}
+
+json Release::to_json()
+{
+	json j = json::object();
+	j["type"] = (int)update_type;
+	if(update_type == HashAndCompare)
+	{
+		std::string s;
+		util::to_hex(s, sha_hash, 0x20);
+		j["hash"] = s;
+	}
+	else if(update_type == GithubReleases)
+	{
+		j["tag"] = tag;
+		j["timestamp"] = timestamp;
+	}
+
+	return j;
 }

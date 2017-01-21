@@ -10,6 +10,7 @@ namespace util
 	Result sha256(u8 *buff, size_t len, u8 *hash);
 	Result file_sha256(std::string file, u8 *hash);
 	std::string read_file(std::string file);
+	void write_file(std::string file, std::string content);
 	bool file_exists(std::string file);
 
 	Result install_cia(u8 *buffer, size_t len);
@@ -17,4 +18,7 @@ namespace util
 
 	size_t align_up(size_t in, size_t align);
 	u64 bswap64(u64 in);
+	
+	void to_hex(std::string &s, u8 *buff, size_t len);
+	void from_hex(u8 *buff, size_t len, std::string &s);
 }

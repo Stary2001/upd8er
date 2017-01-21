@@ -12,7 +12,7 @@
 
 bool load_apps(std::vector<App> &apps)
 {
-	std::string prefix = "/upd8er/";
+	std::string prefix = "/upd8er/manifests/";
 	DIR *dir = opendir(prefix.c_str());
 
 	if(dir == nullptr)
@@ -48,19 +48,35 @@ bool load_apps(std::vector<App> &apps)
 
 bool load_state(std::map<std::string, Release> &state)
 {
-	if(!util::file_exists("upd8er/state.json"))
+	if(!util::file_exists("/upd8er/state.json"))
 	{
 		return false;
 	}
 	else
 	{
-		json j = json::parse(util::read_file("upd8er/state.json"));
+		json j = json::parse(util::read_file("/upd8er/state.json"));
 		if(j.is_null()) return false;
 		for(auto it = j.begin(); it != j.end(); it++)
 		{
-			printf("State entry!!\n");
+			std::string k = it.key();
+			json v = it.value();
+			state[k] = Release(v); 
 		}
 	}
+
+	return true;
+}
+
+bool save_state(std::string filename, std::map<std::string, Release> &state)
+{
+	json j = json::object();
+	for(auto a : state)
+	{
+		j[a.first] = a.second.to_json();
+	}
+	std::string s = j.dump();
+	util::write_file(filename, s);
+	return true;
 }
 
 int main(int argc, char **argv)
@@ -91,13 +107,21 @@ int main(int argc, char **argv)
 		for(auto b: a.update_branches)
 		{
 			std::string k = a.id + "/" + b.first;
+
 			Release r = b.second->get_latest();
 			if(r != state[k])
 			{
-				printf("New update for %s/%s - %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str());
+				printf("New update for %s/%s\n%s vs %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str(), state[k].to_str().c_str());
+				state[k] = r;
+			}
+			else
+			{
+				printf("%s is up to date.\n", b.first.c_str());
 			}
 		}
 	}
+
+	save_state("upd8er/state.json", state);
 
 	while (aptMainLoop())
 	{
@@ -108,7 +132,7 @@ int main(int argc, char **argv)
 		gspWaitForVBlank();
 		if (keys & KEY_START)
 		{
-			break;
+			break; 
 		}
 	}
 

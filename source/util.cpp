@@ -45,6 +45,13 @@ std::string util::read_file(std::string file)
 	return s;
 }
 
+void util::write_file(std::string file, std::string content)
+{
+	std::ofstream f(file.c_str(), std::ios::out | std::ios::binary);
+	f.write(content.data(), content.length());
+	f.close();
+}
+
 bool util::file_exists(std::string file)
 {
 	std::ifstream f(file.c_str(), std::ios::in | std::ios::binary);
@@ -73,4 +80,30 @@ u64 util::bswap64(u64 in)
 		out |= ((u64)in_b[i]) << (8-i)*8;
 	}
 	return out;
+}
+
+void util::to_hex(std::string &s, u8 *buff, size_t len)
+{
+	s = "";
+	const char *chars = "0123456789abcdef";
+
+	for(int i = 0; i < len; i++)
+	{
+		s += chars[(buff[i] & 0xf0) >> 4];
+		s += chars[buff[i] & 0xf];
+	}
+}
+
+void util::from_hex(u8 *buff, size_t len, std::string &s)
+{
+	for(int i = 0; i < len; i++)
+	{
+		char c = s[i*2];
+		if(c >= '0' && c <= '9') { buff[i] = (c - '0') << 4; }
+		else if(c >= 'a' && c <= 'f') { buff[i] = 0xa + (c - 'a') << 4; }
+
+		c = s[(i*2) + 1];
+		if(c >= '0' && c <= '9') { buff[i] |= (c - '0'); }
+		else if(c >= 'a' && c <= 'f') { buff[i] |= 0xa + (c - 'a'); }
+	}
 }
