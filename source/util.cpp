@@ -45,6 +45,17 @@ std::string util::read_file(std::string file)
 	return s;
 }
 
+bool util::file_exists(std::string file)
+{
+	std::ifstream f(file.c_str(), std::ios::in | std::ios::binary);
+	if(f.good())
+	{
+		f.close();
+		return true;
+	}
+	return false;
+}
+
 size_t util::align_up(size_t in, size_t align)
 {
 	if(in % align == 0) return in;

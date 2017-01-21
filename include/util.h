@@ -10,6 +10,7 @@ namespace util
 	Result sha256(u8 *buff, size_t len, u8 *hash);
 	Result file_sha256(std::string file, u8 *hash);
 	std::string read_file(std::string file);
+	bool file_exists(std::string file);
 
 	Result install_cia(u8 *buffer, size_t len);
 	u64 get_cia_title_id(u8 *buffer, size_t len);

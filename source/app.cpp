@@ -6,6 +6,7 @@
 
 App::App(json manifest)
 {
+	id = manifest["id"];
 	name = manifest["name"];
 
 	if(manifest["branches"].is_object())
@@ -52,13 +53,13 @@ HashUpdate::HashUpdate(std::string _url)
 	update_type = HashAndCompare;
 }
 
-bool HashUpdate::check()
+Release HashUpdate::get_latest()
 {
 	u8 *buff;
 	size_t len;
 	if(R_FAILED(util::http::download_buffer(update_url, buff, len, 0x1000)))
 	{
-		return false;
+		return Release();
 	}
 
 	u8 hash[0x20];
@@ -69,7 +70,7 @@ bool HashUpdate::check()
 	}
 	printf("\n");
 
-	return false;
+	return Release(hash);
 }
 
 GHReleasesUpdate::GHReleasesUpdate(std::string _user, std::string _repo)
@@ -79,8 +80,82 @@ GHReleasesUpdate::GHReleasesUpdate(std::string _user, std::string _repo)
 	update_type = GithubReleases;
 }
 
-bool GHReleasesUpdate::check()
+Release GHReleasesUpdate::get_latest()
 {
-	printf("GH releases todo!!\n");
-	return false;
+	std::string url = "https://api.github.com/repos/";
+	url += user + "/" + repo;
+	url += "/releases/latest";
+
+	std::string response;
+	Result res = util::http::download_string(url, response);
+
+	if(R_SUCCEEDED(res))
+	{
+		json j = json::parse(response);
+		std::string tag = j["tag_name"];
+		std::string at = j["published_at"];
+		printf("tag %s at %s\n", tag.c_str(), at.c_str());
+		return Release(tag, at);
+	}
+
+	return Release();
+}
+
+Release::Release()
+{}
+
+Release::Release(std::string _tag, std::string _timestamp)
+{
+	update_type = GithubReleases;
+	tag = _tag;
+	timestamp = _timestamp;
+}
+
+Release::Release(u8 *_hash)
+{
+	update_type = HashAndCompare;
+	memcpy(sha_hash, _hash, 0x20);
+}
+
+void to_hex(std::string &s, u8 *buff, size_t len)
+{
+	const char *chars = "0123456789abcdef";
+
+	for(int i = 0; i < len; i++)
+	{
+		s += chars[(buff[i] & 0xf0) >> 4];
+		s += chars[buff[i] & 0xf];
+	}
+}
+
+void from_hex(u8 *buff, size_t len, std::string &s)
+{
+	for(int i = 0; i < len; i++)
+	{
+		u8 c = buff[i*2];
+		if(c >= '0' && c <= '9') { buff[i] = c - '0'; }
+		else if(c >= 'a' && c <= 'f') { buff[i] = c - 'a'; }
+		c = buff[(i*2) + 1];
+		if(c >= '0' && c <= '9') { buff[i] |= (c - '0') << 4; }
+		else if(c >= 'a' && c <= 'f') { buff[i] |= (c - 'a') << 4; }
+	}
+}
+
+Release::Release(std::string _sha_hash_str)
+{
+	from_hex(sha_hash, 0x20, _sha_hash_str);
+}
+
+std::string Release::to_str()
+{
+	if(update_type == HashAndCompare)
+	{
+		std::string s;
+		to_hex(s, sha_hash, 4);
+		return s;
+	}
+	else if(update_type == GithubReleases)
+	{
+		return tag + " at " + timestamp;
+	}
 }

@@ -45,6 +45,24 @@ bool load_apps(std::vector<App> &apps)
 	return true;
 }
 
+
+bool load_state(std::map<std::string, Release> &state)
+{
+	if(!util::file_exists("upd8er/state.json"))
+	{
+		return false;
+	}
+	else
+	{
+		json j = json::parse(util::read_file("upd8er/state.json"));
+		if(j.is_null()) return false;
+		for(auto it = j.begin(); it != j.end(); it++)
+		{
+			printf("State entry!!\n");
+		}
+	}
+}
+
 int main(int argc, char **argv)
 {
 	gfxInitDefault();
@@ -54,10 +72,16 @@ int main(int argc, char **argv)
 
 	printf("Loading items..\n");
 
+	std::map<std::string, Release> state;
 	std::vector<App> apps;
 	if(!load_apps(apps))
 	{
-		printf("loading items failed\n :(");
+		printf("loading items failed\n");
+	}
+
+	if(!load_state(state))
+	{
+		printf("loading state failed\n");
 	}
 
 	printf("Checking for updates...\n");
@@ -66,9 +90,11 @@ int main(int argc, char **argv)
 		printf("%s...\n", a.name.c_str());
 		for(auto b: a.update_branches)
 		{
-			if(b.second->check())
+			std::string k = a.id + "/" + b.first;
+			Release r = b.second->get_latest();
+			if(r != state[k])
 			{
-				printf("New update for %s/%s!\n", a.name.c_str(), b.first.c_str());
+				printf("New update for %s/%s - %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str());
 			}
 		}
 	}

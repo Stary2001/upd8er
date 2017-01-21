@@ -19,11 +19,28 @@ enum UpdateType
 	GithubReleases,
 };
 
+class Release
+{
+public:
+	Release();
+	Release(std::string tag, std::string timestamp);
+	Release(u8 *sha_hash);
+	Release(std::string sha_hash_str);
+
+	std::string tag;
+	std::string timestamp;
+	u8 sha_hash[0x20];
+
+	UpdateType update_type;
+
+	std::string to_str();
+};
+
 class Update
 {
 public:
 	UpdateType update_type;
-	virtual bool check() = 0;
+	virtual Release get_latest() = 0;
 	std::vector<Action*> post_actions;
 };
 
@@ -34,7 +51,7 @@ public:
 	std::string repo;
 	std::string user;
 
-	virtual bool check();
+	virtual Release get_latest();
 };
 
 class HashUpdate: public Update
@@ -43,7 +60,7 @@ public:
 	HashUpdate(std::string _url);
 	std::string update_url;
 
-	virtual bool check();
+	virtual Release get_latest();
 };
 
 class App
@@ -51,8 +68,27 @@ class App
 public:
 	App(json manifest);
 
+	std::string id;
 	std::string name;
 	std::vector<AppType> types;
 	std::vector<Action*> post_actions;
 	std::map<std::string, Update *> update_branches;
 };
+
+inline bool operator==(const Release& a, const Release& b)
+{
+	if(a.update_type != b.update_type) { return false; }
+	if(a.update_type == GithubReleases)
+	{
+		return a.timestamp == b.timestamp;
+	}
+	else if(a.update_type == HashAndCompare)
+	{
+		return memcmp(a.sha_hash, b.sha_hash, 0x20) == 0;
+	}
+}
+
+inline bool operator!=(const Release& a, const Release& b)
+{
+	return !(a == b);
+}
