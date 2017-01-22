@@ -43,17 +43,21 @@ class Update
 public:
 	UpdateType update_type;
 	virtual Release get_latest() = 0;
+	virtual std::string get_url() = 0;
+
 	std::vector<Action*> post_actions;
 };
 
 class GHReleasesUpdate : public Update
 {
 public:
-	GHReleasesUpdate(std::string _user, std::string _repo);
+	GHReleasesUpdate(std::string _user, std::string _repo, std::string _prefer);
 	std::string repo;
 	std::string user;
+	std::string prefer;
 
 	virtual Release get_latest();
+	virtual std::string get_url();
 };
 
 class HashUpdate: public Update
@@ -63,6 +67,7 @@ public:
 	std::string update_url;
 
 	virtual Release get_latest();
+	virtual std::string get_url();
 };
 
 class App

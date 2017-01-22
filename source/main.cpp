@@ -79,6 +79,11 @@ bool save_state(std::string filename, std::map<std::string, Release> &state)
 	return true;
 }
 
+void http_cb(int done, int size)
+{
+	printf("%i/%i\n", done, size);
+}
+
 int main(int argc, char **argv)
 {
 	gfxInitDefault();
@@ -112,7 +117,9 @@ int main(int argc, char **argv)
 			if(r != state[k])
 			{
 				printf("New update for %s/%s\n%s vs %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str(), state[k].to_str().c_str());
-				Result res = util::http::download_file(b.second->get_url(), util::get_tmp_dir() + "/" + a.name + "-" + b.first.c_str());
+				std::string path = util::get_tmp_dir() + "/" + a.name + "-" + b.first.c_str();
+
+				Result res = util::http::download_file(b.second->get_url(), path, http_cb);
 				if(R_FAILED(res))
 				{
 					printf("Download error!\n");

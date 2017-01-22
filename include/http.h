@@ -45,9 +45,10 @@ namespace util
 			httpcContext _ctx;
 		};
 
+		typedef void (*http_callback)(int, int);
 		Result start_download(std::string url, HTTPContext &c, size_t limit = 0, int recursion = 0);
-		Result download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit = 0);
+		Result download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit = 0, http_callback cb = nullptr);
 		Result download_string(std::string url, std::string &s);
-		Result download_file(std::string url, std::string filename);
+		Result download_file(std::string url, std::string filename, http_callback cb = nullptr);
 	}
 }

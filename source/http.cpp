@@ -177,7 +177,7 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 	return 0;
 }
 
-Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit)
+Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, size_t limit, http_callback cb)
 {
 	Result res;
 
@@ -238,6 +238,7 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 			ctx.cancel();
 			break;
 		}
+		cb(downloaded_total, file_size);
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
 	ctx.close();
@@ -294,13 +295,13 @@ Result util::http::download_string(std::string url, std::string &s)
 	return 0;
 }
 
-Result util::http::download_file(std::string url, std::string filename)
+Result util::http::download_file(std::string url, std::string filename, http_callback cb)
 {
 	Result res;
 	size_t len;
 	u8 *buffer;
 
-	if((res = download_buffer(url, buffer, len)) == 0)
+	if((res = download_buffer(url, buffer, len, 0, cb)) == 0)
 	{
 		std::ofstream f(filename, std::ios::out | std::ios::binary);
 		f.write((char*)buffer, len);

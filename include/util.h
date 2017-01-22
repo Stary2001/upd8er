@@ -18,7 +18,9 @@ namespace util
 
 	size_t align_up(size_t in, size_t align);
 	u64 bswap64(u64 in);
-	
+
 	void to_hex(std::string &s, u8 *buff, size_t len);
 	void from_hex(u8 *buff, size_t len, std::string &s);
+
+	std::string get_tmp_dir();
 }
