@@ -238,7 +238,11 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 			ctx.cancel();
 			break;
 		}
-		cb(downloaded_total, file_size);
+		
+		if(cb != nullptr)
+		{
+			cb(downloaded_total, file_size);
+		}
 	}
 	while(res == ((Result)HTTPC_RESULTCODE_DOWNLOADPENDING));
 	ctx.close();

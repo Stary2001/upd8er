@@ -117,13 +117,45 @@ int main(int argc, char **argv)
 			if(r != state[k])
 			{
 				printf("New update for %s/%s\n%s vs %s!\n", a.name.c_str(), b.first.c_str(), r.to_str().c_str(), state[k].to_str().c_str());
-				std::string path = util::get_tmp_dir() + "/" + a.name + "-" + b.first.c_str();
 
-				Result res = util::http::download_file(b.second->get_url(), path, http_cb);
-				if(R_FAILED(res))
+				if(a.post_actions.size() > 0 && a.post_actions[0]->wants_buff)
 				{
-					printf("Download error!\n");
+					u8 *file_buff;
+					size_t file_len;
+					Result res = util::http::download_buffer(b.second->get_url(), file_buff, file_len, 0, http_cb);
+					if(R_FAILED(res))
+					{
+						printf("Download error!\n");
+						continue;
+					}
+					a.post_actions[0]->buff = file_buff;
+					a.post_actions[0]->buff_len = file_len;
 				}
+				else
+				{
+					std::string path = util::get_tmp_dir() + "/" + a.name + "-" + b.first.c_str();
+					Result res = util::http::download_file(b.second->get_url(), path, http_cb);
+					if(R_FAILED(res))
+					{
+						printf("Download error!\n");
+						continue;
+					}
+				}
+
+				if(a.post_actions.size() != 0)
+				{
+					for(Action *act : a.post_actions)
+					{
+						printf("Executing..\n");
+						if(!act->exec())
+						{
+							printf("Action failed!!!\n");
+							break;
+						}
+					}
+				}
+
+				state[k] = r;
 			}
 			else
 			{
@@ -143,6 +175,7 @@ int main(int argc, char **argv)
 		gfxFlushBuffers();
 		gfxSwapBuffers();
 		gspWaitForVBlank();
+
 		if (keys & KEY_START)
 		{
 			break;

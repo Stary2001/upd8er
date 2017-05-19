@@ -3,7 +3,9 @@
 #include "app.h"
 
 Release::Release()
-{}
+{
+	update_type = Invalid;
+}
 
 Release::Release(std::string _tag, std::string _timestamp)
 {
@@ -54,6 +56,8 @@ std::string Release::to_str()
 	{
 		return tag + " at " + timestamp;
 	}
+
+	return "invalid";
 }
 
 json Release::to_json()

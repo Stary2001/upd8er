@@ -1,5 +1,5 @@
 #pragma once
-
+#include <3ds/types.h>
 #include <starlight/_incLib/json.hpp>
 using json = nlohmann::json;
 
@@ -12,12 +12,19 @@ public:
 	virtual bool exec() = 0;
 	std::string src;
 	std::string dst;
+
+	u8 *buff;
+	size_t buff_len;
+	bool wants_buff;
+
+	Action *next;
 };
 
 class ZipExtractAction : public Action
 {
 public:
 	ZipExtractAction(json j);
+	std::string target;
 	virtual bool exec();
 };
 

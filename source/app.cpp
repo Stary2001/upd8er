@@ -44,11 +44,34 @@ App::App(json manifest)
 		}
 	}
 
+	Action *last_action = nullptr;
 	if(manifest["post"].is_array())
 	{
 		for(auto it = manifest["post"].begin(); it != manifest["post"].end(); it++)
 		{
-			post_actions.push_back(Action::parse(it.value()));
+			Action *this_action = Action::parse(it.value());
+			if(this_action != nullptr)
+			{
+				if(last_action != nullptr)
+				{
+					last_action->next = this_action;
+				}
+				last_action = this_action;
+				post_actions.push_back(this_action);
+			}
+		}
+	}
+	else if(manifest["post"].is_object())
+	{
+		Action *this_action = Action::parse(manifest["post"]);
+		if(this_action != nullptr)
+		{
+			if(last_action != nullptr)
+			{
+				last_action->next = this_action;
+			}
+			last_action = this_action;
+			post_actions.push_back(this_action);
 		}
 	}
 }

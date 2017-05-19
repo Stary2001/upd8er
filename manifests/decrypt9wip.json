@@ -1,0 +1,28 @@
+{
+	"id": "decrypt9",
+	"name": "GodMode9",
+	"type": "arm9",
+	"branches":
+	{
+		"stable":
+		{
+			"type": "github",
+			"user": "d0k3",
+			"repo": "GodMode9"
+		},
+
+		"nightly":
+		{
+			"type": "hash",
+			"url": "https://d0k3.secretalgorithm.com/GodMode9/latest.zip"
+		}
+	},
+
+	"post":
+	{
+		"action": "zipextract",
+		"src": "$last",
+		"target": "GodMode9.bin",
+		"dst": "luma/payloads/GodMode9.bin"
+	}
+}

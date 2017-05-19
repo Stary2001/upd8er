@@ -15,6 +15,7 @@ enum AppType
 
 enum UpdateType
 {
+	Invalid,
 	HashAndCompare,
 	GithubReleases,
 };
@@ -79,6 +80,8 @@ public:
 	std::string name;
 	std::vector<AppType> types;
 	std::vector<Action*> post_actions;
+
+	std::string preferred_branch;
 	std::map<std::string, Update *> update_branches;
 };
 

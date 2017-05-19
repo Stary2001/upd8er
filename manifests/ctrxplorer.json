@@ -1,0 +1,35 @@
+{
+	"id": "ctrxplorer",
+	"name": "CTRXplorer",
+	"type": "cia",
+	"branches":
+	{
+		"stable":
+		{
+			"type": "github",
+			"user": "d0k3",	
+			"repo": "CTRXplorer",
+			"prefer": "zip"
+		},
+
+		"nightly": 
+		{
+			"type": "hash",
+			"url": "https://d0k3.secretalgorithm.com/CTRXplorer/latest.zip"
+		}
+	},
+
+	"actions":
+	[
+		{
+			"action": "zipextract",
+			"src": "$last",
+			"target": "CTRXplorer.cia",
+			"dst": "$next"
+		},
+		{
+			"action": "ciainstall",
+			"src": "$last"
+		}
+	]
+}

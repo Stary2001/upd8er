@@ -45,10 +45,28 @@ std::string util::read_file(std::string file)
 	return s;
 }
 
+void util::read_file_buffer(std::string file, u8*& buff, size_t &len)
+{
+	std::ifstream f(file.c_str(), std::ios::in | std::ios::binary);
+	f.seekg(0, std::ios::end);
+	size_t file_sz = f.tellg();
+	f.seekg(0, std::ios::beg);
+
+	buff = (u8*)malloc(file_sz);
+	len = file_sz;
+	f.read((char*)buff, file_sz);
+	f.close();
+}
+
 void util::write_file(std::string file, std::string content)
 {
+	util::write_file_buffer(file, (u8*)content.data(), content.length());
+}
+
+void util::write_file_buffer(std::string file, u8* buff, size_t len)
+{
 	std::ofstream f(file.c_str(), std::ios::out | std::ios::binary);
-	f.write(content.data(), content.length());
+	f.write((char*)buff, len);
 	f.close();
 }
 

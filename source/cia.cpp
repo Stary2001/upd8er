@@ -46,7 +46,7 @@ u64 get_tmd_title_id(u8* buffer, size_t len)
 			return 0;
 		}
 	}
-	
+
 	u32 tmd_header_off = sig_size + sig_padding + 4;
 	u32 title_id_off = tmd_header_off + 0x4c;
 
@@ -90,6 +90,6 @@ Result util::install_cia(u8 *buffer, size_t len)
 		svcCloseHandle(cia_handle);
 		return res;
 	}
-	
+
 	return 0;
 }
