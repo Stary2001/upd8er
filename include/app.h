@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <starlight/_incLib/json.hpp>
+#include "json.hpp"
 using json = nlohmann::json;
 
 #include "action.h"

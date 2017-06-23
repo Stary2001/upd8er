@@ -1,6 +1,6 @@
 #pragma once
 #include <3ds/types.h>
-#include <starlight/_incLib/json.hpp>
+#include "json.hpp"
 using json = nlohmann::json;
 
 class Action

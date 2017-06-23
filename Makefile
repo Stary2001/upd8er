@@ -28,12 +28,11 @@ include $(DEVKITARM)/3ds_rules
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
 BUILD		:=	build
-SOURCES		:=	source
+SOURCES		:=	source ext/minizip
 DATA		:=	data
-INCLUDES	:=	include
-EXTRA_INCLUDES := -I$(DEVKITPRO)/libstarlight/include
+INCLUDES	:=	include ext
 APP_TITLE	:=	upd8er
-APP_DESCRIPTION := Updater for CIA/3DSX homebrew, as well as ARM9 binaries.
+APP_DESCRIPTION :=	Updater for CIA/3DSX homebrew, as well as FIRM payloads.
 APP_AUTHOR	:=	Stary
 ICON		:=	meta/icon.png
 NO_3DSX		:=	no
@@ -47,9 +46,9 @@ CFLAGS	:=	-g -Wall -Os -mword-relocations \
 			-fomit-frame-pointer -ffast-math -ffunction-sections -Wl,--gc-sections -flto \
 			$(ARCH)
 
-LIBS	:= -lctru -lm -lscenic
+LIBS	:= -lctru -lm -lz
 
-CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DARM_ARCH -D_GNU_SOURCE -w
+CFLAGS	+=	$(INCLUDE) -DARM11 -D_3DS -DARM_ARCH -D_GNU_SOURCE -DUSE_FILE32API -w
 
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -std=gnu++11 -w
 
@@ -102,7 +101,7 @@ export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
 
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-			-I$(CURDIR)/$(BUILD) $(EXTRA_INCLUDES)
+			-I$(CURDIR)/$(BUILD)
 
 export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
