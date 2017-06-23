@@ -45,7 +45,6 @@ bool load_apps(std::vector<App> &apps)
 	return true;
 }
 
-
 bool load_state(std::map<std::string, Release> &state)
 {
 	if(!util::file_exists("/upd8er/state.json"))

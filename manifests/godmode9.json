@@ -1,5 +1,5 @@
 {
-	"id": "decrypt9",
+	"id": "godmode9",
 	"name": "GodMode9",
 	"type": "arm9",
 	"branches":
@@ -22,7 +22,7 @@
 	{
 		"action": "zipextract",
 		"src": "$last",
-		"target": "GodMode9.bin",
-		"dst": "luma/payloads/GodMode9.bin"
+		"target": "GodMode9.firm",
+		"dst": "luma/payloads/GodMode9.firm"
 	}
 }

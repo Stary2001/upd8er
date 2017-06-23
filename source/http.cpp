@@ -59,19 +59,24 @@ Result HTTPContext::download_data(u8 *buffer, u32 size, u32 *downloaded_size)
 	return httpcDownloadData(&_ctx, buffer, size, downloaded_size);
 }
 
+#define HEADER_BUF_SIZE 1024
+
 Result HTTPContext::get_header(std::string name, std::string &str)
 {
-	static char header_buf[512];
-	Result r = httpcGetResponseHeader(&_ctx, name.c_str(), header_buf, 512);
+	static char header_buf[HEADER_BUF_SIZE];
+	Result r;
+
+	r = httpcGetResponseHeader(&_ctx, name.c_str(), header_buf, HEADER_BUF_SIZE);
+
 	if(R_FAILED(r))
 	{
 		return r;
 	}
-	else
-	{
-		str = std::string(header_buf);
-		return 0;
-	}
+
+	if(r == HEADER_BUF_SIZE-1) return MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_HTTP, RD_INVALID_SIZE);
+
+	str = std::string(header_buf);
+	return 0;
 }
 
 Result HTTPContext::add_header(std::string name, std::string value)
@@ -152,11 +157,7 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 	
 	CHECKED(ctx.get_status_code(&resp_status))
 
-	if(resp_status == 200 || resp_status == 206)
-	{
-		//printf("Got %i!\n", resp_status);
-	}
-	else if((resp_status >= 301 && resp_status <= 303) || (resp_status >= 307 && resp_status <= 308))
+	if((resp_status >= 301 && resp_status <= 303) || (resp_status >= 307 && resp_status <= 308))
 	{
 		URL new_url;
 		CHECKED(do_redirect(ctx, url, new_url));
@@ -165,9 +166,9 @@ Result util::http::start_download(std::string url, HTTPContext &ctx, size_t limi
 
 		return start_download(new_url.to_str(), ctx, limit, recursion + 1);
 	}
-	else
+	else if(resp_status != 200 && resp_status != 206) // OK & Partial Content
 	{
-		//printf("HTTP *not* OK for %s, got %i instead!\n", url.c_str(), resp_status);
+		printf("Got HTTP status %i!\n", resp_status);
 		ctx.cancel();
 		ctx.close();
 
@@ -212,12 +213,10 @@ Result util::http::download_buffer(std::string url, u8 *& buff, size_t &len, siz
 	{
 		if((len - downloaded_total) < chunk)
 		{
-			//printf("Resizing buffer to %i bytes!\n", len + (chunk - (len % chunk)));
 			u8 *oldbuff = buff;
 			buff = (u8*)realloc(buff, len + (chunk - (len % chunk)));
 			if(buff == nullptr)
 			{
-				//printf("REALLOC FAILED!!\n");
 				free(oldbuff);
 				return MAKERESULT(RL_FATAL, RS_OUTOFRESOURCE, RM_HTTP, RD_TOO_LARGE);
 			}
@@ -276,7 +275,6 @@ Result util::http::download_string(std::string url, std::string &s)
 	{
 		if((s.capacity() - downloaded_total) < chunk)
 		{
-			//printf("Resizing buffer to %i bytes!\n", s.capacity() + (chunk - (s.capacity() % chunk)));
 			s.resize(s.capacity() + (chunk - (s.capacity() % chunk)));
 			buff = (u8*)s.data();
 		}
@@ -284,7 +282,6 @@ Result util::http::download_string(std::string url, std::string &s)
 		res = ctx.download_data(buff + downloaded_total, chunk, &downloaded);
 		if(res != HTTPC_RESULTCODE_DOWNLOADPENDING && R_FAILED(res))
 		{
-			delete buff;
 			buff = nullptr;
 			return res;
 		}
